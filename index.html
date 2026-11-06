@@ -9,10 +9,10 @@
 <style>
 :root{
   /* layout: settings strip, then three editable tables, then the year calendar exactly as it will appear in the spreadsheet */
-  --ink:#1d2733; --muted:#5c6b7a; --line:#d5dde5; --paper:#f4f6f8; --card:#ffffff; --accent:#1f4e78;
+  --ink:#e4e9ef; --muted:#9aa8b7; --line:#2b3642; --paper:#0f151c; --card:#17202a; --accent:#7fb2e5; --field:#0d1319; --rule:#c3ccd6;
   --p1:#8FAADC; --p2:#FFFF00; --k1:#F4B183; --k2:#FFC000; --hand:#92D050;
   --display:"IBM Plex Sans Condensed","Arial Narrow",Arial,sans-serif; --body:"IBM Plex Sans",Arial,sans-serif;
-  color-scheme:light;
+  color-scheme:dark;
 }
 *{box-sizing:border-box}
 html,body{margin:0}
@@ -27,38 +27,39 @@ h2{font:600 18px/1.2 var(--display);margin:0;letter-spacing:.02em;text-transform
 .hint{color:var(--muted);font-size:13px;margin:0}
 .status{display:flex;flex-wrap:wrap;gap:10px}
 .chip{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:14px}
-.sw{width:14px;height:14px;border-radius:3px;border:1px solid rgba(0,0,0,.25);flex:none}
+.sw{width:14px;height:14px;border-radius:3px;border:1px solid rgba(255,255,255,.35);flex:none}
 .settings{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
 label{display:grid;gap:4px;font-size:13px;color:var(--muted);font-weight:500}
-input,select{font:inherit;color:var(--ink);background:#fff;border:1px solid #b9c4cf;border-radius:5px;padding:6px 8px;min-width:0;width:100%}
+input,select{font:inherit;color:var(--ink);background:var(--field);border:1px solid #3a4858;border-radius:5px;padding:6px 8px;min-width:0;width:100%}
 input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
-button{font:500 14px var(--body);border-radius:6px;border:1px solid var(--accent);background:#fff;color:var(--accent);padding:7px 12px;cursor:pointer}
-button:hover{background:#eaf1f8}
-button.primary{background:var(--accent);color:#fff;font-weight:600;padding:10px 18px}
-button.primary:hover{background:#173c5d}
+button{font:500 14px var(--body);border-radius:6px;border:1px solid var(--accent);background:transparent;color:var(--accent);padding:7px 12px;cursor:pointer}
+button:hover{background:#1e2a37}
+button.primary{background:var(--accent);color:#0b1520;font-weight:600;padding:10px 18px}
+button.primary:hover{background:#a6caef}
+button:disabled{opacity:.5;cursor:not-allowed}
 button.x{border-color:transparent;color:var(--muted);padding:4px 8px}
-button.x:hover{background:#f3e3e3;color:#9b1c1c}
+button.x:hover{background:#3a2024;color:#ff9e9e}
 .cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:20px}
 .tbl-wrap{overflow-x:auto}
 table.ed{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;font-size:14px}
 table.ed th{font-weight:600;text-align:left;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.04em;padding:4px 6px;border-bottom:1px solid var(--line)}
-table.ed td{padding:4px 6px;border-bottom:1px solid #eef1f4;vertical-align:middle}
+table.ed td{padding:4px 6px;border-bottom:1px solid #222c37;vertical-align:middle}
 table.ed td.num{text-align:right}
 table.ed input,table.ed select{padding:4px 6px}
-.who-pill{display:inline-block;padding:2px 10px;border-radius:999px;font-weight:600;border:1px solid rgba(0,0,0,.15)}
-.changed{color:#9b1c1c;font-weight:600}
+.who-pill{display:inline-block;padding:2px 10px;border-radius:999px;font-weight:600;color:#111;border:1px solid rgba(0,0,0,.15)}
+.changed{color:#ff9e9e;font-weight:600}
 .dl{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
 .msg{font-size:14px;color:var(--muted)}
-.msg.err{color:#9b1c1c}
+.msg.err{color:#ff9e9e}
 .key{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:13px}
 .key span{display:flex;align-items:center;gap:6px}
 .cal-scroll{overflow-x:auto}
 table.cal{border-collapse:collapse;font:12px/1.2 Calibri,Carlito,Arial,sans-serif;font-variant-numeric:tabular-nums;margin-bottom:18px}
-table.cal th{border:1px solid #000;padding:3px 0;font-weight:700}
+table.cal th{border:1px solid var(--rule);padding:3px 0;font-weight:700}
 table.cal td{padding:2px 4px;text-align:center;white-space:nowrap}
-table.cal td.w{border-left:1px solid #000}
-table.cal td.c{border-right:1px solid #000;font-weight:700;min-width:22px}
-table.cal tr.lastd td{border-bottom:1px solid #000}
+table.cal td.w{border-left:1px solid var(--rule)}
+table.cal td.c{border-right:1px solid var(--rule);font-weight:700;min-width:22px}
+table.cal tr.lastd td{border-bottom:1px solid var(--rule)}
 table.cal tr.cnt td{font-weight:400}
 table.cal tr.cnt td.lbl{font-weight:700;text-align:left}
 table.cal td.tot{font-weight:700;padding-left:10px}
@@ -451,7 +452,7 @@ function renderCal(blocks) {
         if (k < f.n) {
           const d = f.first + k, info = dayInfo(blocks, d), col = dayColor(st, blocks, d, info), code = dayCode(st, info);
           if (info && info.num == null) { if (code === initial(st, 1)) c1[mi]++; else if (code === initial(st, 2)) c2[mi]++; }
-          const bg = col ? ` style="background:#${col}"` : "";
+          const bg = col ? ` style="background:#${col};color:#111"` : "";
           body += `<td class="w"${bg}>${wd(d)}</td><td${bg}>${String(k + 1).padStart(2, "0")}</td><td class="c"${bg}>${code}</td>`;
         } else body += `<td class="w"></td><td></td><td class="c"></td>`;
       });
