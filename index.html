@@ -48,6 +48,7 @@ table.ed td.num{text-align:right}
 table.ed input,table.ed select{padding:4px 6px}
 .who-pill{display:inline-block;padding:2px 10px;border-radius:999px;font-weight:600;color:#111;border:1px solid rgba(0,0,0,.15)}
 .changed{color:#ff9e9e;font-weight:600}
+.now{display:inline-block;margin-top:2px;font-size:11px;font-weight:600;color:#0b1520;background:var(--accent);border-radius:4px;padding:0 5px}
 .dl{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
 .msg{font-size:14px;color:var(--muted)}
 .msg.err{color:#ff9e9e}
@@ -101,7 +102,7 @@ table.cal td.tot{font-weight:700;padding-left:10px}
         <h2 id="h-fixed">Fixed periods</h2>
         <button type="button" id="addFixed">Add period</button>
       </div>
-      <p class="hint">Agreed on/off dates. Overlapping days show as handover days. The rotation starts on the last period's Off date.</p>
+      <p class="hint">Completed periods. Rotation blocks move here automatically once their Off date has passed. Overlapping days show as handover days, and the rotation carries on from the last period's Off date.</p>
       <div class="tbl-wrap"><table class="ed"><thead><tr><th>#</th><th>On watch</th><th>On</th><th>Off</th><th class="num">Days</th><th></th></tr></thead><tbody id="fixedBody"></tbody></table></div>
       <div id="rotStartWrap" hidden><label for="rotStart">Rotation starts (no fixed periods)<input id="rotStart" type="date"></label></div>
     </section>
@@ -375,7 +376,7 @@ function buildXlsx(st) {
 }
 
 const DEFAULT_STATE = {
-  p1: "Arran", p2: "Stu", calStart: "2025-01", years: 4, defaultDays: 56, planUntil: "2029-05-30", rotStart: "2026-12-16", overrides: [],
+  p1: "Arran", p2: "Stu", calStart: "2025-01", years: 4, defaultDays: 56, planUntil: "2029-05-30", rotStart: "2026-11-03", overrides: [43], m3: true,
   fixed: [
     { who: 1, on: "2024-11-15", off: "2025-01-19" }, { who: 2, on: "2025-01-15", off: "2025-03-27" },
     { who: 1, on: "2025-03-27", off: "2025-05-25" }, { who: 2, on: "2025-05-24", off: "2025-07-26" },
@@ -383,7 +384,7 @@ const DEFAULT_STATE = {
     { who: 1, on: "2025-11-04", off: "2025-12-16" }, { who: 2, on: "2025-12-16", off: "2026-01-29" },
     { who: 1, on: "2026-01-29", off: "2026-03-21" }, { who: 2, on: "2026-03-21", off: "2026-05-27" },
     { who: 1, on: "2026-05-27", off: "2026-08-03" }, { who: 2, on: "2026-08-02", off: "2026-09-22" },
-    { who: 1, on: "2026-09-22", off: "2026-11-03" }, { who: 2, on: "2026-11-03", off: "2026-12-16" }],
+    { who: 1, on: "2026-09-22", off: "2026-11-03" }],
   keys: [
     { who: 1, from: "2025-02-14", to: "2025-02-14", note: "" }, { who: 1, from: "2025-03-21", to: "2025-03-26", note: "" },
     { who: 1, from: "2025-07-20", to: "2025-07-21", note: "" }, { who: 2, from: "2025-07-29", to: "2025-07-31", note: "" },
@@ -399,6 +400,19 @@ const DEFAULT_STATE = {
 let st; try { st = JSON.parse(localStorage.getItem("watchRota.v1")); } catch (e) {}
 if (!st || !st.fixed) st = JSON.parse(JSON.stringify(DEFAULT_STATE));
 if (!st.planUntil) st.planUntil = DEFAULT_STATE.planUntil;
+if (!st.m3) { const l = st.fixed[st.fixed.length - 1]; if (l && l.on === "2026-11-03" && l.off === "2026-12-16") { st.fixed.pop(); st.overrides.unshift(dn(l.off) - dn(l.on)); } st.m3 = true; }
+function todayDn() { if (window.__today) return dn(window.__today); const n = new Date(); return Math.round(Date.UTC(n.getFullYear(), n.getMonth(), n.getDate()) / DAY); }
+// Completed rotation blocks (Off date has passed) become fixed periods.
+function promoteCompleted() {
+  let moved = 0;
+  for (let guard = 0; guard < 300; guard++) {
+    const r = buildBlocks(st).find(b => b.type === "Rotation");
+    if (!r || r.off >= todayDn()) break;
+    st.fixed.push({ who: r.who, on: ds(r.on), off: ds(r.off) }); st.overrides.shift(); moved++;
+  }
+  if (moved) save();
+  return moved;
+}
 const $ = id => document.getElementById(id);
 function save() { try { localStorage.setItem("watchRota.v1", JSON.stringify(st)); } catch (e) {} }
 const fields = ["p1", "p2", "defaultDays", "planUntil", "calStart", "years", "rotStart"];
@@ -427,7 +441,7 @@ function renderFixed() {
 }
 function renderRot(blocks) {
   const rot = blocks.filter(b => b.type === "Rotation"), nFixed = blocks.length - rot.length;
-  $("rotBody").innerHTML = rot.map((b, i) => `<tr><td>${nFixed + i + 1}</td><td>${pill(b.who)}</td><td>${fmt(b.on)}</td><td>${fmt(b.off)}</td><td class="num"><input id="ov${i}" type="number" min="1" step="1" inputmode="numeric" style="width:80px" class="${b.overridden ? "changed" : ""}" placeholder="${b.trimmed ? b.days : st.defaultDays}" value="${st.overrides[i] || ""}" aria-label="Days for block ${nFixed + i + 1}">${b.trimmed ? '<div class="hint">Ends on plan date</div>' : ""}</td></tr>`).join("");
+  $("rotBody").innerHTML = rot.map((b, i) => `<tr><td>${nFixed + i + 1}</td><td>${pill(b.who)}</td><td>${fmt(b.on)}</td><td>${fmt(b.off)}</td><td class="num"><input id="ov${i}" type="number" min="1" step="1" inputmode="numeric" style="width:80px" class="${b.overridden ? "changed" : ""}" placeholder="${b.trimmed ? b.days : st.defaultDays}" value="${st.overrides[i] || ""}" aria-label="Days for block ${nFixed + i + 1}">${b.trimmed ? '<div class="hint">Ends on plan date</div>' : ""}</td></tr>`.replace("<td>" + (nFixed + i + 1) + "</td>", "<td>" + (nFixed + i + 1) + (b.on <= todayDn() && todayDn() <= b.off ? '<div class="now">Now</div>' : "") + "</td>")).join("");
   rot.forEach((b, i) => $("ov" + i).onchange = e => { const v = parseInt(e.target.value, 10); st.overrides[i] = v > 0 ? v : ""; save(); renderAll(); });
 }
 function renderKeys() {
@@ -468,7 +482,7 @@ function renderCal(blocks) {
     .map(([c, t]) => `<span><i class="sw" style="background:#${c}"></i>${esc(t)}</span>`).join("");
 }
 function renderStatus(blocks) {
-  const now = new Date(), today = Math.round(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()) / DAY);
+  const today = todayDn();
   const info = dayInfo(blocks, today), next = blocks.find(b => b.off >= today && blocks.some(n => n.on === b.off || (n.on <= b.off && n.on > b.on)));
   const chips = [];
   if (info) chips.push(`<span class="chip"><i class="sw" style="background:#${info.handover ? COLORS.hand : (info.who === 1 ? COLORS.p1 : COLORS.p2)}"></i>Today: ${info.handover ? "handover day" : esc(nameOf(st, info.who)) + " on watch"}</span>`);
@@ -481,6 +495,7 @@ function renderStatus(blocks) {
   $("initWarn").textContent = initial(st, 1) === initial(st, 2) ? "Both names start with the same letter, so the calendar can't tell them apart by letter. Colours still work." : "";
 }
 function renderAll(mode) {
+  if (promoteCompleted()) mode = undefined;
   const blocks = buildBlocks(st);
   if (mode !== "skipInputs") { renderFixed(); renderKeys(); }
   else st.fixed.forEach((f, i) => { const el = $("fd" + i); if (el) el.textContent = f.on && f.off ? dn(f.off) - dn(f.on) : ""; });
