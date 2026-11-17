@@ -1,0 +1,15 @@
+{
+  "name": "Watch Rotation Planner",
+  "short_name": "Watch Rota",
+  "description": "Watch rotation planner for Arran and Stu",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#22303d",
+  "theme_color": "#22303d",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
